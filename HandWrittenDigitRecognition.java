@@ -20,7 +20,7 @@ public class HandWrittenDigitRecognition
 		
 		nn.setMomentum(0.8);
 		
-		int batchSize = 100;
+		int batchSize = 50;
 		
 		for(int counter = 0; counter >= 0; counter++)
 		{	
@@ -36,7 +36,7 @@ public class HandWrittenDigitRecognition
 			}
 			
 			//learning rate decay
-			nn.setRate(0.001 / (1 + 0.1 * counter));
+			nn.setRate(0.1 / (1 + 2 * counter));
 			
 			//backprop and calc error
 			double error = 0;
@@ -53,21 +53,21 @@ public class HandWrittenDigitRecognition
 			nn.saveNetwork("C:\\Users\\Agi\\eclipse-workspace\\Neural Network\\src\\digitRecogSaves\\start.txt");//insert file location for saving network
 						
 			System.out.println(counter);
-			System.out.println(error);
-			
+			System.out.println(error / batchSize);
+
 			nn.updateWeight();
 			
 			if(false)//make true to see test score
 			{
-				int cor = 0;
+				int correct = 0;
 				
 				for(int i = 0; i < labelstest.length; i++)
 				{
 					if(labelstest[i] == indexvalue(nn.calc(imagestest.get(i))))
-						cor++;
+						correct++;
 				}
 				
-				System.out.println(cor / labelstest.length);
+				System.out.println(correct / labelstest.length * 1.0);
 			}
 		}
 	}
