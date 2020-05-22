@@ -4,23 +4,19 @@ public class HandWrittenDigitRecognition
 {
 	public static void main(String[] args) throws FileNotFoundException
 	{
-		int[] labels = MnistReader.getLabels("C:\\Users\\Agi\\eclipse-workspace\\Neural Network\\src\\train-labels.idx1-ubyte");//insert location of this file here
-		List<int[][]> imageinput = MnistReader.getImages("C:\\Users\\Agi\\eclipse-workspace\\Neural Network\\src\\train-images.idx3-ubyte");//insert location of this file here
+		int[] labels = MnistReader.getLabels("train-labels.idx1-ubyte");//insert location of this file here
+		List<int[][]> imageinput = MnistReader.getImages("train-images.idx3-ubyte");//insert location of this file here
 		List<double[]> images = convert3dto2d(imageinput);
 		
-		int[] labelstest = MnistReader.getLabels("C:\\Users\\Agi\\eclipse-workspace\\Neural Network\\src\\t10k-labels.idx1-ubyte");//insert location of this file here
-		List<int[][]> imageinputtest = MnistReader.getImages("C:\\Users\\Agi\\eclipse-workspace\\Neural Network\\src\\t10k-images.idx3-ubyte");//insert location of this file here
+		int[] labelstest = MnistReader.getLabels("t10k-labels.idx1-ubyte");//insert location of this file here
+		List<int[][]> imageinputtest = MnistReader.getImages("t10k-images.idx3-ubyte");//insert location of this file here
 		List<double[]> imagestest = convert3dto2d(imageinputtest);
 		
-		int[] dim = {784, 300, 100, 10};
-		
+		int[] dim = {784, 20, 15, 10};
 		NeuralNetwork nn = new NeuralNetwork(dim, (x) -> (x > 0) ? x : 0, (x, y) -> (y > 0) ? 1 : 0);//replace dim with a file name and it will start from the network saved
-		
-		nn.outputActivation((x) -> (1 / (Math.exp(x * -1) + 1)), (x, y) -> x - x * x);
-		
-		nn.setMomentum(0.8);
-		
-		int batchSize = 50;
+		nn.setOutputActivation((x) -> (1 / (Math.exp(x * -1) + 1)), (x, y) -> x - x * x);
+		nn.setMomentum(0.1);
+		int batchSize = 10;
 		
 		for(int counter = 0; counter >= 0; counter++)
 		{	
@@ -35,26 +31,25 @@ public class HandWrittenDigitRecognition
 				labelBatch[i] = labels[pos];
 			}
 			
-			//learning rate decay
-			nn.setRate(0.1 / (1 + 2 * counter));
-			
 			//backprop and calc error
 			double error = 0;
 				
 			for(int i = 0; i < imageBatch.length; i++)
 			{
 				double[] newlabel = new double[10];
-				
 				newlabel[labelBatch[i]] = 1.0;
-						
 				error += nn.backProp(imageBatch[i], newlabel);
 			}
 			
 			nn.saveNetwork("C:\\Users\\Agi\\eclipse-workspace\\Neural Network\\src\\digitRecogSaves\\start.txt");//insert file location for saving network
-						
-			System.out.println(counter);
-			System.out.println(error / batchSize);
-
+			
+			System.out.printf("ER:  %.5f  GM:  %.5f  WM:  %.5f %n", 
+								error / batchSize, 
+								getL2(nn.getDerWeightData()), 
+								getL2(nn.getWeightData()));
+			
+			nn.setRate(0.001);
+			
 			nn.updateWeight();
 			
 			if(false)//make true to see test score
@@ -63,25 +58,31 @@ public class HandWrittenDigitRecognition
 				
 				for(int i = 0; i < labelstest.length; i++)
 				{
-					if(labelstest[i] == indexvalue(nn.calc(imagestest.get(i))))
+					if(labelstest[i] == indexMax(nn.calc(imagestest.get(i))))
 						correct++;
 				}
 				
-				System.out.println(correct / labelstest.length * 1.0);
+				System.out.println(correct);
 			}
 		}
 	}
 	
-	public static int indexvalue(double[] input)
+	/*
+	 * Returns the index of the largets entry
+	 */
+	public static int indexMax(double[] input)
 	{
-		int index = 0;
+	    int index = 0;
 		
-		for(int i = 0; i < input.length; i++)
-			index = (input[i] > input[index]) ? i : index;
+	    for(int i = 0; i < input.length; i++)
+		index = (input[i] > input[index]) ? i : index;
 		
-		return index;
+	    return index;
 	}
 	
+	/*
+	 * Turn list of 2D array to list of 1D array
+	 */
 	public static List<double[]> convert3dto2d(List<int[][]> input)
 	{
 		List<double[]> output = new ArrayList<double[]>();
@@ -100,5 +101,18 @@ public class HandWrittenDigitRecognition
 		}
 		
 		return output;
+	}
+	
+	public static double getL2(List<double[]> input)
+	{
+		double sum = 0;
+		
+		for(double[] array: input)
+		{
+			for(int i = 0; i < array.length; i++)
+				sum += array[i] * array[i];
+		}
+		
+		return Math.sqrt(sum);
 	}
 }
